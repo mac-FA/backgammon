@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2b1d12" />
+  <title>Backgammon – Alpha</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Startbildschirm -->
+    <section id="screen-start" class="screen">
+      <div class="card">
+        <h1>Backgammon</h1>
+        <p class="subtitle">Eine ruhige Partie gegen den Computer.</p>
+
+        <div class="form-row">
+          <label for="opponent">Gegner</label>
+          <select id="opponent">
+            <option value="npc-easy">NPC – leicht</option>
+            <option value="npc-medium" selected>NPC – mittel</option>
+            <option value="npc-hard">NPC – schwer</option>
+            <option value="local">Lokal (2 Spieler)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="player-color">Deine Farbe</label>
+          <select id="player-color">
+            <option value="white" selected>Weiß (zieht zuerst, oben rechts heim)</option>
+            <option value="black">Schwarz</option>
+          </select>
+        </div>
+
+        <div class="form-row checkbox">
+          <input type="checkbox" id="auto-confirm" checked />
+          <label for="auto-confirm">Züge automatisch übernehmen</label>
+        </div>
+
+        <button id="btn-start" class="primary">Spiel starten</button>
+        <p class="hint">Tipp: Würfel zum Werfen anklicken. Stein wählen, dann Zielfeld antippen.</p>
+      </div>
+    </section>
+
+    <!-- Spielbildschirm -->
+    <section id="screen-game" class="screen hidden">
+      <header class="topbar">
+        <button id="btn-back" class="ghost" title="Zurück zum Menü">&larr; Menü</button>
+        <div class="status" id="status">Weiß ist am Zug</div>
+        <div class="topbar-actions">
+          <button id="btn-theme" class="ghost small" title="Tag/Nacht umschalten">Nacht</button>
+          <button id="btn-fullscreen" class="ghost small" title="Vollbild umschalten">Vollbild</button>
+          <button id="btn-undo" class="ghost small" title="Letzten Teilschritt rückgängig">Rückgängig</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <div class="board-wrap">
+          <div id="board" class="board" aria-label="Backgammon-Brett">
+            <!-- Wird per JS gerendert -->
+          </div>
+        </div>
+
+        <aside class="sidebar">
+          <div class="panel dice-panel">
+            <div class="panel-title">Würfel</div>
+            <div class="dice" id="dice">
+              <button class="die" id="die-1" aria-label="Würfel 1">–</button>
+              <button class="die" id="die-2" aria-label="Würfel 2">–</button>
+            </div>
+            <div class="dice-actions">
+              <button id="btn-roll" class="primary small">Werfen</button>
+              <button id="btn-pass" class="ghost small" disabled>Zug beenden</button>
+            </div>
+            <div class="moves-left" id="moves-left"></div>
+          </div>
+
+          <div class="panel log-panel">
+            <div class="panel-title">Verlauf</div>
+            <ol id="log" class="log"></ol>
+          </div>
+
+          <div class="panel info-panel">
+            <div class="panel-title">Information</div>
+            <div id="info" class="info">Wirf die Würfel, um zu beginnen.</div>
+          </div>
+        </aside>
+      </main>
+    </section>
+
+    <!-- Sieg-Overlay -->
+    <div id="overlay-win" class="overlay hidden">
+      <div class="overlay-card">
+        <h2 id="win-title">Sieg!</h2>
+        <p id="win-text"></p>
+        <div class="overlay-actions">
+          <button id="btn-rematch" class="primary">Revanche</button>
+          <button id="btn-menu" class="ghost">Hauptmenü</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
