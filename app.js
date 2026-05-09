@@ -164,7 +164,8 @@
     return moves;
   }
 
-  /** Wendet einen Halbzug auf einer (geklonten) Position an. Mutiert s. */
+  /** Wendet einen Halbzug auf einer (geklonten) Position an. Mutiert s.
+   *  Liefert { stone, capturedStone? } für UI-Effekte. */
   function applySubMove(s, color, mv) {
     const opp = color === WHITE ? BLACK : WHITE;
     let stone;
@@ -173,16 +174,17 @@
     } else {
       stone = s.points[mv.from].pop();
     }
+    let capturedStone = null;
     if (mv.to === 'off') {
       s.off[color].push(stone);
     } else {
-      // Schlagen?
       if (mv.kind === 'hit' && countAt(s.points, mv.to) === 1) {
-        const hit = s.points[mv.to].pop();
-        s.bar[opp].push(hit);
+        capturedStone = s.points[mv.to].pop();
+        s.bar[opp].push(capturedStone);
       }
       s.points[mv.to].push(stone);
     }
+    return { stone, capturedStone };
   }
 
   function cloneState(s) {
@@ -670,6 +672,20 @@
   const MOVE_MS = 600;        // Steinanimation
   const SUB_STEP_MS = 1100;   // Pause zwischen NPC-Teilzügen / Compound-Schritten
   const ROLL_MS = 750;        // Würfel-Animation
+  const HIT_FLASH_MS = 900;   // Aufmerksamkeit auf geschlagenen Stein
+
+  function flashCapturedStone(id) {
+    if (!id) return;
+    // Nach dem Re-Render existiert der Stein in der Bar; FLIP animiert ihn dorthin.
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.checker[data-id="${id}"]`);
+      if (!el) return;
+      el.classList.remove('hit-flash');
+      void el.offsetWidth;
+      el.classList.add('hit-flash');
+      setTimeout(() => el.classList.remove('hit-flash'), HIT_FLASH_MS + 50);
+    });
+  }
 
   function applyFlip(oldRects) {
     document.querySelectorAll('.checker').forEach(el => {
@@ -1031,14 +1047,18 @@
       }
       const mv = opt.path[i++];
       const desc = describeMove(state, state.current, mv);
-      applySubMove(state, state.current, mv);
+      const result = applySubMove(state, state.current, mv);
       consumeDie(mv.die);
       appendLog(desc, state.current === state.playerColor ? 'you' : 'npc');
       rerender(true);
+      if (result.capturedStone) flashCapturedStone(result.capturedStone.id);
       checkWin();
       if (state.phase === 'gameover') { finishGame(); return; }
-      // Pause zwischen Compound-Schritten
-      setTimeout(playStep, i < opt.path.length ? SUB_STEP_MS : MOVE_MS + 80);
+      // Pause zwischen Compound-Schritten – nach Schlag etwas länger
+      const stepDelay = i < opt.path.length
+        ? (result.capturedStone ? SUB_STEP_MS + 350 : SUB_STEP_MS)
+        : MOVE_MS + 80;
+      setTimeout(playStep, stepDelay);
     };
     playStep();
   }
@@ -1096,16 +1116,17 @@
       const mv = seq.moves[i++];
       const desc = describeMove(state, state.current, mv);
       pushHistory();
-      applySubMove(state, state.current, mv);
+      const result = applySubMove(state, state.current, mv);
       consumeDie(mv.die);
       appendLog(desc, 'npc');
       rerender(true);
+      if (result.capturedStone) flashCapturedStone(result.capturedStone.id);
       checkWin();
       if (state.phase === 'gameover') {
         finishGame();
         return;
       }
-      setTimeout(playStep, SUB_STEP_MS);
+      setTimeout(playStep, result.capturedStone ? SUB_STEP_MS + 400 : SUB_STEP_MS);
     };
     playStep();
   }

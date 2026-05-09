@@ -71,9 +71,19 @@
 
 :root.dark .log li { color: var(--text); }
 :root.dark .checker.black {
-  background: radial-gradient(circle at 30% 30%, #4a3a2e 0%, #2a201a 70%, #15100a 100%);
-  border: 1px solid #5a4a3a;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.45), inset 0 -2px 3px rgba(0,0,0,0.35), inset 0 2px 3px rgba(255,255,255,0.08);
+  background: radial-gradient(circle at 30% 30%, #5a4a3e 0%, #2a201a 70%, #15100a 100%);
+  border: 1px solid #6e5a48;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.45), inset 0 -2px 3px rgba(0,0,0,0.35), inset 0 2px 3px rgba(255,255,255,0.12);
+}
+/* Auf der Bar in beiden Themes klar abgesetzt */
+.bar .checker, .bear-off .checker {
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.4),
+              inset 0 -2px 3px rgba(0,0,0,0.2), inset 0 2px 3px rgba(255,255,255,0.2);
+}
+:root.dark .bar { background: #221610; }
+:root.dark .bar .checker.black {
+  background: radial-gradient(circle at 30% 30%, #7a6450 0%, #3a2c20 70%, #1c1108 100%);
+  border: 1px solid #8a7458;
 }
 
 * { box-sizing: border-box; }
@@ -387,6 +397,8 @@ button.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
 .board {
   --board-w: min(92vw, calc(100vh * 1.45), 1100px);
   --board-h: calc(var(--board-w) * 0.62);
+  --bar-w: clamp(54px, 6.5%, 78px);
+  --off-w: clamp(56px, 6.5%, 78px);
   width: var(--board-w);
   height: var(--board-h);
   background: linear-gradient(135deg, var(--wood-1) 0%, var(--wood-2) 100%);
@@ -395,7 +407,7 @@ button.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
   box-shadow: 0 10px 30px rgba(20, 12, 5, 0.25), inset 0 0 0 2px rgba(255,255,255,0.05);
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 36px 1fr 56px;
+  grid-template-columns: 1fr var(--bar-w) 1fr var(--off-w);
   grid-template-rows: 1fr 1fr;
   overflow: hidden;
 }
@@ -481,11 +493,14 @@ button.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
   pointer-events: none;
 }
 
+/* Spitzen zeigen nach innen (zur Mitte des Bretts) */
 .point.up .triangle {
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  /* Untere Reihe: Spitze nach oben (zur Mitte) */
+  clip-path: polygon(0 100%, 100% 100%, 50% 0);
 }
 .point.down .triangle {
-  clip-path: polygon(0 100%, 100% 100%, 50% 0);
+  /* Obere Reihe: Spitze nach unten (zur Mitte) */
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
 .point.light .triangle { background: var(--point-light); }
@@ -552,15 +567,15 @@ button.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
     0 0 14px rgba(0,0,0,0.3);
 }
 
-/* Position innerhalb der Punkt-Spitze */
-.point.up   .target-marker { bottom: 6%; }
-.point.down .target-marker { top: 6%; }
+/* Marker liegen an der Spitze (Brettmitte), so verdecken sie keine Steine.
+   Stones stapeln sich am Außenrand, Marker am Innenrand → kein Überlapp. */
+.point.up   .target-marker { top: 4%; }      /* Untere Reihe: Spitze oben */
+.point.down .target-marker { bottom: 4%; }   /* Obere Reihe: Spitze unten */
+.target-marker { width: 46%; font-size: 18px; }
 
 /* Dice-Badge auf der Markierung (zeigt benutzte Augen) */
 .target-marker .dice-badge {
   position: absolute;
-  bottom: -10px;
-  right: -10px;
   background: #1c1612;
   color: #fffaf2;
   font-size: 11px;
@@ -569,7 +584,11 @@ button.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.35);
   border: 1px solid rgba(255,255,255,0.25);
+  white-space: nowrap;
 }
+/* Badge zeigt zur Brettmitte, nie Richtung Steine */
+.point.up .target-marker .dice-badge   { top: -10px;    left: 50%; transform: translateX(-50%); }
+.point.down .target-marker .dice-badge { bottom: -10px; left: 50%; transform: translateX(-50%); }
 
 @keyframes markerIn {
   from { opacity: 0; transform: translateX(-50%) scale(0.4); }
@@ -622,8 +641,8 @@ button.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
   position: relative;
   left: auto;
   transform: none;
-  width: 70%;
-  margin: -6px 0;
+  width: 82%;
+  margin: 3px 0;
 }
 
 .checker.white {
@@ -651,13 +670,15 @@ button.ghost:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 .checker.hit-flash {
-  animation: hitFlash 700ms ease-out;
+  animation: hitFlash 900ms cubic-bezier(.22,.9,.3,1);
+  z-index: 10;
 }
 
 @keyframes hitFlash {
-  0%   { box-shadow: 0 0 0 0 rgba(215,106,106,0.6); }
-  50%  { box-shadow: 0 0 0 10px rgba(215,106,106,0); }
-  100% { box-shadow: 0 2px 4px rgba(0,0,0,0.25); }
+  0%   { box-shadow: 0 0 0 0 rgba(215,80,80,0.85), 0 2px 6px rgba(0,0,0,0.4); }
+  35%  { box-shadow: 0 0 0 14px rgba(215,80,80,0.0), 0 2px 6px rgba(0,0,0,0.4); }
+  60%  { box-shadow: 0 0 0 0 rgba(215,80,80,0.6), 0 2px 6px rgba(0,0,0,0.4); }
+  100% { box-shadow: 0 0 0 12px rgba(215,80,80,0.0), 0 2px 4px rgba(0,0,0,0.25); }
 }
 
 .point .stack-count {
