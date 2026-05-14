@@ -593,6 +593,12 @@
   let compoundOptions = [];    // [{target, path, kind, dice}]
   let inputLocked = false;     // während Animationen blockieren
 
+  function resetUiState() {
+    selectedFrom = null;
+    compoundOptions = [];
+    inputLocked = false;
+  }
+
   function buildBoardSkeleton() {
     elBoard.innerHTML = '';
 
@@ -715,22 +721,34 @@
       const stones = state.points[p];
       const count = stones.length;
       const isUp = el.classList.contains('up');
-      const visible = Math.min(count, 5);
-      // Stones gestapelt
-      for (let i = 0; i < visible; i++) {
+
+      // Adaptive Stapel-Abstände:
+      // - bis 5 Steine: locker (19%)
+      // - bis ~10: enger, alle Steine sichtbar
+      // - mehr: noch enger + kleinere Skalierung der oberen Steine ("Überlauf-Stapel")
+      const BASE_OFFSET = 19;
+      const stackBudget = 79; // 4% Rand + 17% Steinhöhe + (n-1)*offset <= ~96%
+      const offset = count <= 5
+        ? BASE_OFFSET
+        : stackBudget / Math.max(count - 1, 1);
+
+      for (let i = 0; i < count; i++) {
         const stone = stones[i];
         const cEl = document.createElement('div');
         cEl.className = `checker ${stone.color}`;
         cEl.dataset.id = stone.id;
-        // Position relativ zum Punkt:
-        // Punkt-Höhe ist variabel; wir nutzen prozentuale Offsets.
-        // Stein-Größe: 78% der Punktbreite. Punkt ist deutlich höher als breit -> 5 Steine passen.
-        const offset = i * 19;
-        if (isUp) cEl.style.bottom = `${4 + offset}%`;
-        else cEl.style.top = `${4 + offset}%`;
+        // Bei extrem hohen Stapeln (>10) die oberen Steine etwas verkleinern
+        if (count > 10 && i >= 5) {
+          const scale = Math.max(0.6, 1 - (i - 4) * 0.05);
+          cEl.style.width = `${78 * scale}%`;
+        }
+        const pos = 4 + i * offset;
+        if (isUp) cEl.style.bottom = `${pos}%`;
+        else cEl.style.top = `${pos}%`;
         el.appendChild(cEl);
       }
-      if (count > 5) {
+      // Zahl-Badge nur noch als Fallback bei extrem hohen Stapeln
+      if (count > 12) {
         const badge = document.createElement('div');
         badge.className = 'stack-count';
         badge.textContent = count;
@@ -1202,6 +1220,7 @@
       autoConfirm: document.getElementById('auto-confirm').checked
     };
     state = newGame(opts);
+    resetUiState();
     document.getElementById('screen-start').classList.add('hidden');
     document.getElementById('screen-game').classList.remove('hidden');
     elLog.innerHTML = '';
@@ -1226,6 +1245,7 @@
       autoConfirm: state.autoConfirm
     };
     state = newGame(opts);
+    resetUiState();
     elLog.innerHTML = '';
     appendLog('Neues Spiel begonnen. Weiß zieht zuerst.', 'system');
     rerender(false);
